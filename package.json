@@ -1,0 +1,141 @@
+{
+  "name": "leet-io",
+  "displayName": "leet.io",
+  "description": "Scaffold, test, and submit LeetCode problems in Java from VS Code — with an Anki-inspired rating step that drives a hardest-first practice queue.",
+  "version": "0.1.0",
+  "publisher": "khoa-doan",
+  "author": {
+    "name": "Khoa Doan"
+  },
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DNT-Khoa/leet-io.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "keywords": [
+    "leetcode",
+    "java",
+    "interview-prep",
+    "spaced-repetition"
+  ],
+  "categories": [
+    "Programming Languages",
+    "Testing"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "leetio.init",
+        "title": "leet.io: Initialize Workspace"
+      },
+      {
+        "command": "leetio.newProblem",
+        "title": "leet.io: New Problem from URL"
+      },
+      {
+        "command": "leetio.searchLeetcode",
+        "title": "leet.io: Search LeetCode"
+      },
+      {
+        "command": "leetio.runTests",
+        "title": "leet.io: Run Tests",
+        "icon": "$(play)"
+      },
+      {
+        "command": "leetio.submit",
+        "title": "leet.io: Submit",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "leetio.resetProblem",
+        "title": "leet.io: Reset Problem",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "leetio.pickRandom",
+        "title": "leet.io: Pick Random Practice Problem",
+        "icon": "$(getting-started-beginner)"
+      },
+      {
+        "command": "leetio.setLeetcodeCookies",
+        "title": "leet.io: Set LeetCode Cookies"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "leetio",
+          "title": "leet.io",
+          "icon": "media/icon-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "leetio": [
+        {
+          "id": "leetio.practice",
+          "name": "Practice"
+        }
+      ]
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "leetio.runTests",
+          "when": "leetio.activeIsProblem"
+        },
+        {
+          "command": "leetio.submit",
+          "when": "leetio.activeIsProblem"
+        },
+        {
+          "command": "leetio.resetProblem",
+          "when": "leetio.activeIsProblem"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "leetio.runTests",
+          "when": "leetio.activeIsProblem",
+          "group": "navigation@1"
+        },
+        {
+          "command": "leetio.submit",
+          "when": "leetio.activeIsProblem",
+          "group": "navigation@2"
+        },
+        {
+          "command": "leetio.resetProblem",
+          "when": "leetio.activeIsProblem",
+          "group": "navigation@3"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "leetio.pickRandom",
+          "when": "view == leetio.practice",
+          "group": "navigation@1"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.4.0"
+  }
+}

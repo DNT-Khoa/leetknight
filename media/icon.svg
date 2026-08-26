@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- V2 — LC monogram wrapped in a "repetition" arc, hinting at spaced repetition. -->
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="lc2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFA116"/>
+      <stop offset="1" stop-color="#E67E00"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg2)"/>
+
+  <!-- Outer "rotation" arc — spaced-repetition motif -->
+  <g fill="none" stroke="#FFA116" stroke-width="8" stroke-linecap="round" opacity="0.35">
+    <path d="M 42 128 A 86 86 0 1 1 128 214"/>
+  </g>
+  <!-- Arrow head on the arc -->
+  <path d="M 118 200 L 130 214 L 116 226" fill="none" stroke="#FFA116" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+
+  <!-- Inner LC monogram, tighter -->
+  <g fill="url(#lc2)">
+    <!-- L -->
+    <rect x="72" y="80" width="24" height="80" rx="3"/>
+    <rect x="72" y="136" width="52" height="24" rx="3"/>
+    <!-- C -->
+    <rect x="132" y="80" width="60" height="24" rx="3"/>
+    <rect x="132" y="80" width="24" height="80" rx="3"/>
+    <rect x="132" y="136" width="60" height="24" rx="3"/>
+  </g>
+</svg>

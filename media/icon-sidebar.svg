@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- LC monogram inside a repetition arc — matches primary icon V2 -->
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Rotation arc (repetition motif) with a small arrowhead -->
+    <path d="M 3.5 12 A 8.5 8.5 0 1 1 12 20.5" stroke-width="1.4"/>
+    <path d="M 10.5 19 L 12 20.7 L 10.5 22.4" stroke-width="1.4"/>
+  </g>
+  <!-- Inner LC monogram, solid fill -->
+  <g fill="currentColor">
+    <!-- L -->
+    <rect x="6.5"  y="7"    width="2.2" height="8"   rx="0.4"/>
+    <rect x="6.5"  y="12.8" width="4.6" height="2.2" rx="0.4"/>
+    <!-- C -->
+    <rect x="12.5" y="7"    width="5.2" height="2.2" rx="0.4"/>
+    <rect x="12.5" y="7"    width="2.2" height="8"   rx="0.4"/>
+    <rect x="12.5" y="12.8" width="5.2" height="2.2" rx="0.4"/>
+  </g>
+</svg>
