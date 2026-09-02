@@ -3,7 +3,7 @@
 Run a LeetCode Solution.java against its example test cases via LeetCode's own
 judge (the "Run Code" endpoint from the LeetCode web IDE).
 
-Reads exampleTestcases from <slug>/.leetio.json — cached at scaffold time,
+Reads exampleTestcases from <slug>/.leetknight.json — cached at scaffold time,
 so no extra GraphQL round trip on every run.
 
 Rate-limit note
@@ -58,10 +58,10 @@ def grade_case(your: str, expected: str, compare_bit: str | None) -> tuple[bool,
 
 
 def load_meta(problem_dir: str) -> dict:
-    meta_path = os.path.join(problem_dir, ".leetio.json")
+    meta_path = os.path.join(problem_dir, ".leetknight.json")
     if not os.path.isfile(meta_path):
         raise FileNotFoundError(
-            f"missing {meta_path}. Re-scaffold with 'leet.io: New Problem'."
+            f"missing {meta_path}. Re-scaffold with 'LeetKnight: New Problem'."
         )
     with open(meta_path) as fh:
         return json.load(fh)
@@ -140,11 +140,11 @@ def main() -> int:
 
     data_input = meta.get("exampleTestcases") or ""
     if not data_input.strip():
-        print(f"[error] no exampleTestcases in .leetio.json — re-scaffold this problem.", file=sys.stderr)
+        print(f"[error] no exampleTestcases in .leetknight.json — re-scaffold this problem.", file=sys.stderr)
         return 1
     question_id = meta.get("questionId") or ""
     if not question_id:
-        print(f"[error] no questionId in .leetio.json — re-scaffold this problem.", file=sys.stderr)
+        print(f"[error] no questionId in .leetknight.json — re-scaffold this problem.", file=sys.stderr)
         return 1
 
     try:

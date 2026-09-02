@@ -20,7 +20,7 @@ export async function runInTerminal(
     cachedTerminal?.dispose();
     cachedEnvKey = envKey;
     cachedTerminal = vscode.window.createTerminal({
-      name: "leet.io",
+      name: "LeetKnight",
       cwd: root,
       env,
     });

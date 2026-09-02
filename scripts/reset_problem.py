@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Reset <slug>/Solution.java to the original starter code from .leetio.json.
+Reset <slug>/Solution.java to the original starter code from .leetknight.json.
 
 Silent — no confirmation. The caller (the VS Code extension) is responsible
 for prompting the user when the reset was manually triggered from the editor
@@ -25,11 +25,11 @@ def main() -> int:
 
     workspace = os.getcwd()
     problem_dir = os.path.join(workspace, args.problem)
-    meta_path = os.path.join(problem_dir, ".leetio.json")
+    meta_path = os.path.join(problem_dir, ".leetknight.json")
     solution_path = os.path.join(problem_dir, "Solution.java")
 
     if not os.path.isfile(meta_path):
-        print(f"[error] missing {meta_path}. Re-scaffold with 'leet.io: New Problem'.", file=sys.stderr)
+        print(f"[error] missing {meta_path}. Re-scaffold with 'LeetKnight: New Problem'.", file=sys.stderr)
         return 1
 
     with open(meta_path) as fh:

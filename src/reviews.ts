@@ -30,7 +30,7 @@ export interface PendingEntry {
 const CURRENT_VERSION = 1;
 
 export function reviewsPath(workspaceRoot: string): string {
-  return path.join(workspaceRoot, ".leetio", "reviews.json");
+  return path.join(workspaceRoot, ".leetknight", "reviews.json");
 }
 
 export function loadReviews(workspaceRoot: string): ReviewsFile {

@@ -1,33 +1,59 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <!-- V2 — LC monogram wrapped in a "repetition" arc, hinting at spaced repetition. -->
+  <!-- LeetKnight - < / > with sword as the slash (spaced) -->
   <defs>
-    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#111827"/>
       <stop offset="1" stop-color="#0B1220"/>
     </linearGradient>
-    <linearGradient id="lc2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFA116"/>
-      <stop offset="1" stop-color="#E67E00"/>
+    <linearGradient id="blade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"   stop-color="#64748B"/>
+      <stop offset="0.5" stop-color="#F8FAFC"/>
+      <stop offset="1"   stop-color="#64748B"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#FFB84D"/>
+      <stop offset="0.5" stop-color="#FFA116"/>
+      <stop offset="1"   stop-color="#B85A00"/>
+    </linearGradient>
+    <linearGradient id="grip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3B2411"/>
+      <stop offset="1" stop-color="#1F1508"/>
     </linearGradient>
   </defs>
 
-  <rect width="256" height="256" fill="url(#bg2)"/>
+  <rect width="256" height="256" fill="url(#bg)"/>
 
-  <!-- Outer "rotation" arc — spaced-repetition motif -->
-  <g fill="none" stroke="#FFA116" stroke-width="8" stroke-linecap="round" opacity="0.35">
-    <path d="M 42 128 A 86 86 0 1 1 128 214"/>
-  </g>
-  <!-- Arrow head on the arc -->
-  <path d="M 118 200 L 130 214 L 116 226" fill="none" stroke="#FFA116" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+  <!-- Soft orange glow -->
+  <ellipse cx="128" cy="128" rx="108" ry="108" fill="#FFA116" opacity="0.07"/>
 
-  <!-- Inner LC monogram, tighter -->
-  <g fill="url(#lc2)">
-    <!-- L -->
-    <rect x="72" y="80" width="24" height="80" rx="3"/>
-    <rect x="72" y="136" width="52" height="24" rx="3"/>
-    <!-- C -->
-    <rect x="132" y="80" width="60" height="24" rx="3"/>
-    <rect x="132" y="80" width="24" height="80" rx="3"/>
-    <rect x="132" y="136" width="60" height="24" rx="3"/>
+  <!-- Left angle bracket < (pushed outward) -->
+  <path d="M 62 50 L 18 128 L 62 206"
+        fill="none" stroke="url(#orange)" stroke-width="20"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Right angle bracket > (pushed outward) -->
+  <path d="M 194 50 L 238 128 L 194 206"
+        fill="none" stroke="url(#orange)" stroke-width="20"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Sword leaning like a slash - longer blade, sword proportions -->
+  <g transform="rotate(32 128 128)">
+    <!-- Blade -->
+    <path d="M 128 42 L 138 62 L 138 142 L 118 142 L 118 62 Z" fill="url(#blade)"/>
+    <!-- Fuller -->
+    <line x1="128" y1="66" x2="128" y2="138" stroke="#475569" stroke-width="1.8" opacity="0.7"/>
+    <line x1="121" y1="66" x2="121" y2="138" stroke="#FFFFFF" stroke-width="1" opacity="0.35"/>
+    <!-- Crossguard -->
+    <rect x="102" y="142" width="52" height="9" rx="2" fill="url(#orange)"/>
+    <!-- Grip -->
+    <rect x="120" y="151" width="16" height="32" rx="2" fill="url(#grip)"/>
+    <g stroke="#FFA116" stroke-width="1.2" opacity="0.55">
+      <line x1="120" y1="159" x2="136" y2="159"/>
+      <line x1="120" y1="167" x2="136" y2="167"/>
+      <line x1="120" y1="175" x2="136" y2="175"/>
+    </g>
+    <!-- Pommel -->
+    <circle cx="128" cy="192" r="10" fill="url(#orange)"/>
+    <circle cx="128" cy="192" r="3.5" fill="#1F1508"/>
   </g>
 </svg>

@@ -70,7 +70,7 @@ def load_session_from_env() -> Session:
     if missing:
         raise AuthError(
             f"missing LeetCode cookies: {', '.join(missing)}.\n"
-            f"Run 'leet.io: Set LeetCode Cookies' to paste fresh values from "
+            f"Run 'LeetKnight: Set LeetCode Cookies' to paste fresh values from "
             f"your browser DevTools (Application > Cookies > leetcode.com).",
             reason="missing",
         )
@@ -80,7 +80,7 @@ def load_session_from_env() -> Session:
         when = time.strftime("%Y-%m-%d %H:%M", time.localtime(exp))
         raise AuthError(
             f"LEETCODE_SESSION expired on {when}.\n"
-            f"Run 'leet.io: Set LeetCode Cookies' to paste a fresh value.",
+            f"Run 'LeetKnight: Set LeetCode Cookies' to paste a fresh value.",
             reason="expired",
         )
 
@@ -95,7 +95,7 @@ def make_requests_session(s: Session, referer_path: str = "/"):
     rs.cookies.set("LEETCODE_SESSION", s.leetcode_session, domain="leetcode.com")
     rs.cookies.set("csrftoken", s.csrf_token, domain="leetcode.com")
     rs.headers.update({
-        "User-Agent": "leet-io/1.0",
+        "User-Agent": "LeetKnight/1.0",
         "Referer": f"{BASE}{referer_path}",
         "x-csrftoken": s.csrf_token,
         "Content-Type": "application/json",
@@ -121,7 +121,7 @@ def classify_response_error(status_code: int, body_text: str, retry_after: Optio
     if status_code == 403 and "CSRF" in body_text:
         return AuthError(
             "LeetCode rejected the csrftoken (request blocked by CSRF middleware).\n"
-            "Run 'leet.io: Set LeetCode Cookies' and paste a fresh csrftoken "
+            "Run 'LeetKnight: Set LeetCode Cookies' and paste a fresh csrftoken "
             "(while you're there, refresh LEETCODE_SESSION too — they're usually rotated together).",
             reason="csrf",
         )
@@ -130,7 +130,7 @@ def classify_response_error(status_code: int, body_text: str, retry_after: Optio
             "LeetCode rejected the LEETCODE_SESSION (server-side invalidated — "
             "maybe you logged out elsewhere, changed your password, or the account "
             "was flagged).\n"
-            "Run 'leet.io: Set LeetCode Cookies' to paste a fresh value.",
+            "Run 'LeetKnight: Set LeetCode Cookies' to paste a fresh value.",
             reason="session",
         )
     return AuthError(

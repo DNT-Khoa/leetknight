@@ -6,7 +6,7 @@ Unlike test_leetcode.py (which uses interpret_solution and does NOT count),
 this hits the /submit/ endpoint — the submission shows up in your LeetCode
 submission history and counts toward acceptance rate.
 
-On Accepted, writes <workspace>/.leetio/pending.json with the problem's
+On Accepted, writes <workspace>/.leetknight/pending.json with the problem's
 {slug, title, difficulty, url, at}. The VS Code extension tails this file
 with a FileSystemWatcher and, when it appears, pops the Hard/Medium/Easy
 rating modal and merges the entry into reviews.json.
@@ -34,10 +34,10 @@ POLL_MAX_WAIT = 60
 
 
 def load_meta(problem_dir: str) -> dict:
-    meta_path = os.path.join(problem_dir, ".leetio.json")
+    meta_path = os.path.join(problem_dir, ".leetknight.json")
     if not os.path.isfile(meta_path):
         raise FileNotFoundError(
-            f"missing {meta_path}. Re-scaffold with 'leet.io: New Problem'."
+            f"missing {meta_path}. Re-scaffold with 'LeetKnight: New Problem'."
         )
     with open(meta_path) as fh:
         return json.load(fh)
@@ -89,7 +89,7 @@ def confirm(slug: str) -> bool:
 
 def write_pending(workspace: str, meta: dict) -> None:
     """Signal the extension that a submission just landed as Accepted."""
-    pending_dir = os.path.join(workspace, ".leetio")
+    pending_dir = os.path.join(workspace, ".leetknight")
     os.makedirs(pending_dir, exist_ok=True)
     payload = {
         "slug": meta["slug"],
@@ -127,7 +127,7 @@ def main() -> int:
 
     question_id = meta.get("questionId") or ""
     if not question_id:
-        print(f"[error] no questionId in .leetio.json — re-scaffold this problem.", file=sys.stderr)
+        print(f"[error] no questionId in .leetknight.json — re-scaffold this problem.", file=sys.stderr)
         return 1
 
     with open(solution_path) as fh:
@@ -168,7 +168,7 @@ def main() -> int:
         try:
             write_pending(workspace, meta)
         except Exception as e:
-            print(f"[warn] could not write pending.json for leet.io rating modal: {e}", file=sys.stderr)
+            print(f"[warn] could not write pending.json for LeetKnight rating modal: {e}", file=sys.stderr)
         return 0
 
     if (result.get("compile_error") or "").strip():

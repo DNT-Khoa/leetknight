@@ -18,11 +18,11 @@ import {
 let extensionRoot: string;
 let extensionContext: vscode.ExtensionContext;
 
-const LEETCODE_SESSION_KEY = "leetio.leetcodeSession";
-const LEETCODE_CSRF_KEY = "leetio.leetcodeCsrf";
+const LEETCODE_SESSION_KEY = "leetknight.leetcodeSession";
+const LEETCODE_CSRF_KEY = "leetknight.leetcodeCsrf";
 
 const SOLUTION_FILENAME = "Solution.java";
-const META_FILENAME = ".leetio.json";
+const META_FILENAME = ".leetknight.json";
 
 export function activate(context: vscode.ExtensionContext) {
   extensionRoot = context.extensionPath;
@@ -32,29 +32,29 @@ export function activate(context: vscode.ExtensionContext) {
   const practice = new PracticeProvider(root);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("leetio.init", () => initWorkspace()),
-    vscode.commands.registerCommand("leetio.newProblem", () => newProblem()),
-    vscode.commands.registerCommand("leetio.searchLeetcode", () =>
+    vscode.commands.registerCommand("leetknight.init", () => initWorkspace()),
+    vscode.commands.registerCommand("leetknight.newProblem", () => newProblem()),
+    vscode.commands.registerCommand("leetknight.searchLeetcode", () =>
       searchLeetcode(),
     ),
-    vscode.commands.registerCommand("leetio.runTests", () => runTests()),
-    vscode.commands.registerCommand("leetio.submit", () => submit()),
-    vscode.commands.registerCommand("leetio.resetProblem", () =>
+    vscode.commands.registerCommand("leetknight.runTests", () => runTests()),
+    vscode.commands.registerCommand("leetknight.submit", () => submit()),
+    vscode.commands.registerCommand("leetknight.resetProblem", () =>
       resetProblem(),
     ),
-    vscode.commands.registerCommand("leetio.pickRandom", () =>
+    vscode.commands.registerCommand("leetknight.pickRandom", () =>
       pickRandom(practice),
     ),
-    vscode.commands.registerCommand("leetio.setLeetcodeCookies", () =>
+    vscode.commands.registerCommand("leetknight.setLeetcodeCookies", () =>
       setLeetcodeCookies(),
     ),
     vscode.commands.registerCommand(
-      "leetio._openAndReset",
+      "leetknight._openAndReset",
       (slug: string) => openAndReset(slug, practice),
     ),
   );
 
-  const practiceView = vscode.window.createTreeView("leetio.practice", {
+  const practiceView = vscode.window.createTreeView("leetknight.practice", {
     treeDataProvider: practice,
   });
   context.subscriptions.push(practiceView);
@@ -90,10 +90,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Watch for pending.json from a fresh Submit-Accepted.
     const pendingUri = vscode.Uri.file(
-      path.join(root, ".leetio", "pending.json"),
+      path.join(root, ".leetknight", "pending.json"),
     );
     const pendingWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(root, ".leetio/pending.json"),
+      new vscode.RelativePattern(root, ".leetknight/pending.json"),
     );
     const onPending = () => handlePending(root, practice);
     pendingWatcher.onDidCreate(onPending);
@@ -111,7 +111,7 @@ export function deactivate() {}
 function workspaceRoot(): string | undefined {
   const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (!root) {
-    vscode.window.showErrorMessage("leet.io: open a folder first.");
+    vscode.window.showErrorMessage("LeetKnight: open a folder first.");
   }
   return root;
 }
@@ -121,7 +121,7 @@ function requireInit(): string | undefined {
   if (!root) return undefined;
   if (!fs.existsSync(reviewsPath(root))) {
     vscode.window.showErrorMessage(
-      "leet.io: run 'leet.io: Initialize Workspace' first.",
+      "LeetKnight: run 'LeetKnight: Initialize Workspace' first.",
     );
     return undefined;
   }
@@ -143,7 +143,7 @@ function updateActiveContext(): void {
   }
   vscode.commands.executeCommand(
     "setContext",
-    "leetio.activeIsProblem",
+    "leetknight.activeIsProblem",
     isProblem,
   );
 }
@@ -181,7 +181,7 @@ function checkPython3(): void {
 
 function warnNoPython(): void {
   vscode.window.showErrorMessage(
-    "leet.io: `python3` not found on PATH. Install Python 3.10+ and ensure `python3 --version` works from your shell — the bundled scripts (new.py / test_leetcode.py / submit_leetcode.py / reset_problem.py) cannot run without it.",
+    "LeetKnight: `python3` not found on PATH. Install Python 3.10+ and ensure `python3 --version` works from your shell — the bundled scripts (new.py / test_leetcode.py / submit_leetcode.py / reset_problem.py) cannot run without it.",
   );
 }
 
@@ -198,7 +198,7 @@ async function initWorkspace() {
   const root = workspaceRoot();
   if (!root) return;
 
-  const dir = path.join(root, ".leetio");
+  const dir = path.join(root, ".leetknight");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const p = reviewsPath(root);
@@ -210,29 +210,29 @@ async function initWorkspace() {
   if (!fs.existsSync(readme)) {
     fs.writeFileSync(
       readme,
-      `# leet.io workspace
+      `# LeetKnight workspace
 
-This folder is a leet.io workspace. Ratings and attempt history live in
-\`.leetio/reviews.json\`.
+This folder is a LeetKnight workspace. Ratings and attempt history live in
+\`.leetknight/reviews.json\`.
 
 ## Getting started
 
-1. Open the **leet.io** activity-bar entry to see the Practice panel.
-2. Run **leet.io: Set LeetCode Cookies** (from the Command Palette) to paste
+1. Open the **LeetKnight** activity-bar entry to see the Practice panel.
+2. Run **LeetKnight: Set LeetCode Cookies** (from the Command Palette) to paste
    \`LEETCODE_SESSION\` and \`csrftoken\` from your browser DevTools.
-3. Run **leet.io: Search LeetCode** or **leet.io: New Problem from URL** to
+3. Run **LeetKnight: Search LeetCode** or **LeetKnight: New Problem from URL** to
    scaffold a problem. Each problem lives in its own folder:
-   \`<slug>/Solution.java\`, \`<slug>/notes.md\`, \`<slug>/.leetio.json\`.
+   \`<slug>/Solution.java\`, \`<slug>/notes.md\`, \`<slug>/.leetknight.json\`.
 4. With a \`Solution.java\` open, use the ▶ / ☁️ / ↻ buttons in the editor
    toolbar to test / submit / reset.
-5. After a Submit-Accepted, leet.io pops a modal asking you to rate
+5. After a Submit-Accepted, LeetKnight pops a modal asking you to rate
    Hard / Medium / Easy. The Practice panel groups your problems by that
    rating so the ones you found hardest bubble to the top.
 `,
     );
   }
 
-  vscode.window.showInformationMessage("leet.io workspace ready.");
+  vscode.window.showInformationMessage("LeetKnight workspace ready.");
 }
 
 async function newProblem() {
@@ -258,7 +258,7 @@ async function runTests() {
   const slug = activeProblemSlug(root);
   if (!slug) {
     vscode.window.showErrorMessage(
-      "leet.io: open a scaffolded Solution.java first.",
+      "LeetKnight: open a scaffolded Solution.java first.",
     );
     return;
   }
@@ -279,7 +279,7 @@ async function submit() {
   const slug = activeProblemSlug(root);
   if (!slug) {
     vscode.window.showErrorMessage(
-      "leet.io: open a scaffolded Solution.java first.",
+      "LeetKnight: open a scaffolded Solution.java first.",
     );
     return;
   }
@@ -296,7 +296,7 @@ async function submit() {
 
 async function promptForCookies() {
   const choice = await vscode.window.showWarningMessage(
-    "LeetCode cookies not set. Run 'leet.io: Set LeetCode Cookies' first.",
+    "LeetCode cookies not set. Run 'LeetKnight: Set LeetCode Cookies' first.",
     "Set cookies now",
   );
   if (choice === "Set cookies now") {
@@ -310,7 +310,7 @@ async function resetProblem() {
   const slug = activeProblemSlug(root);
   if (!slug) {
     vscode.window.showErrorMessage(
-      "leet.io: open a scaffolded Solution.java first.",
+      "LeetKnight: open a scaffolded Solution.java first.",
     );
     return;
   }
@@ -327,7 +327,7 @@ async function pickRandom(practice: PracticeProvider) {
   const slug = randomTrackedSlug(root);
   if (!slug) {
     vscode.window.showInformationMessage(
-      "leet.io: no practice problems yet. Solve and submit one to add it here.",
+      "LeetKnight: no practice problems yet. Solve and submit one to add it here.",
     );
     return;
   }
@@ -348,7 +348,7 @@ async function openAndReset(slug: string, practice: PracticeProvider) {
   if (!fs.existsSync(solutionPath)) {
     if (!entry) {
       vscode.window.showErrorMessage(
-        `leet.io: no metadata for '${slug}'. Try 'leet.io: New Problem from URL'.`,
+        `LeetKnight: no metadata for '${slug}'. Try 'LeetKnight: New Problem from URL'.`,
       );
       return;
     }
@@ -403,11 +403,11 @@ async function setLeetcodeCookies() {
   const parts: string[] = [];
   if (stored.length) parts.push(`stored ${stored.join(" + ")}`);
   if (cleared.length) parts.push(`cleared ${cleared.join(" + ")}`);
-  vscode.window.showInformationMessage(`leet.io: ${parts.join("; ")}.`);
+  vscode.window.showInformationMessage(`LeetKnight: ${parts.join("; ")}.`);
 }
 
 async function handlePending(root: string, practice: PracticeProvider) {
-  const pendingPath = path.join(root, ".leetio", "pending.json");
+  const pendingPath = path.join(root, ".leetknight", "pending.json");
   if (!fs.existsSync(pendingPath)) return;
 
   let pending: PendingEntry;
@@ -415,7 +415,7 @@ async function handlePending(root: string, practice: PracticeProvider) {
     pending = JSON.parse(fs.readFileSync(pendingPath, "utf8")) as PendingEntry;
   } catch (e: any) {
     vscode.window.showErrorMessage(
-      `leet.io: could not read pending.json: ${e.message || e}`,
+      `LeetKnight: could not read pending.json: ${e.message || e}`,
     );
     fs.rmSync(pendingPath, { force: true });
     return;
@@ -459,7 +459,7 @@ async function fetchAllLeetcodeProblems(): Promise<LeetcodeSearchResult[]> {
   // searchKeyword behind auth, so client-side filter over this REST list
   // is the simplest no-auth path.
   const r = await fetch("https://leetcode.com/api/problems/all/", {
-    headers: { "User-Agent": "leet-io/1.0" },
+    headers: { "User-Agent": "LeetKnight/1.0" },
   });
   if (!r.ok) {
     throw new Error(`LeetCode catalog failed: HTTP ${r.status}`);
@@ -510,7 +510,7 @@ async function searchLeetcode() {
       try {
         return await fetchLeetcodeQuestions(query);
       } catch (e: any) {
-        vscode.window.showErrorMessage(`leet.io: ${e.message}`);
+        vscode.window.showErrorMessage(`LeetKnight: ${e.message}`);
         return [];
       }
     },
@@ -518,7 +518,7 @@ async function searchLeetcode() {
 
   if (questions.length === 0) {
     vscode.window.showInformationMessage(
-      "leet.io: no LeetCode problems match that query.",
+      "LeetKnight: no LeetCode problems match that query.",
     );
     return;
   }
@@ -539,7 +539,7 @@ async function searchLeetcode() {
 
   if (picked.question.paidOnly) {
     vscode.window.showErrorMessage(
-      "leet.io: this is a premium-only LeetCode problem and cannot be scaffolded without a paid subscription.",
+      "LeetKnight: this is a premium-only LeetCode problem and cannot be scaffolded without a paid subscription.",
     );
     return;
   }
