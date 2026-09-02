@@ -2,7 +2,7 @@
   "name": "leetknight",
   "displayName": "LeetKnight",
   "description": "Scaffold, test, and submit LeetCode problems in Java from VS Code — with an Anki-inspired rating step that drives a hardest-first practice queue.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "khoa-doan",
   "author": {
     "name": "Khoa Doan"
