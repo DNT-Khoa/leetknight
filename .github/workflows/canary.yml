@@ -1,0 +1,82 @@
+name: Scaffold Canary
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run scaffold canary
+        id: canary
+        run: python3 tests/canary.py
+
+      - name: Ensure `scaffold-broken` label exists
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create scaffold-broken \
+            --color FF0000 \
+            --description "LeetCode scaffold script broken" \
+            --force
+
+      - name: Open or update tracking issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILURES: ${{ steps.canary.outputs.failures }}
+        run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          RUN_URL="${REPO_URL}/actions/runs/${{ github.run_id }}"
+          PARSER_URL="${REPO_URL}/blob/main/scripts/new.py"
+          BODY=$(cat <<EOF
+          The scaffold canary failed on $(date -u +%Y-%m-%dT%H:%M:%SZ).
+
+          ### Failures
+          \`\`\`
+          ${FAILURES:-<no structured output captured — see workflow logs>}
+          \`\`\`
+
+          ### Workflow run
+          ${RUN_URL}
+
+          ### Likely causes
+          - LeetCode's GraphQL schema changed (\`questionData\` fields renamed / removed).
+          - LeetCode's Java \`codeSnippets\` shape changed.
+          - Transient network issue — re-run the workflow before assuming the scraper is broken.
+
+          ### Next steps
+          1. Re-run this workflow manually (Actions → Scaffold Canary → Run workflow).
+          2. If it fails again, inspect ${PARSER_URL}.
+          3. Close this issue once a fix is merged.
+          EOF
+          )
+
+          existing=$(gh issue list --label scaffold-broken --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Commenting on existing issue #$existing"
+            gh issue comment "$existing" --body "$BODY"
+          else
+            echo "Opening new issue"
+            gh issue create \
+              --title "🚨 Scaffold canary failed" \
+              --label scaffold-broken \
+              --body "$BODY"
+          fi

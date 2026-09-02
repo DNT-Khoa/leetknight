@@ -1,0 +1,43 @@
+name: Bump version and tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # PAT (Contents: write) so the tag push fires release-extension.yml.
+          # The default GITHUB_TOKEN does not trigger downstream workflows.
+          token: ${{ secrets.RELEASE_PAT }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version, commit, tag
+        run: |
+          npm version ${{ inputs.bump }} -m "chore: release v%s"
+
+      - name: Push commit and tag
+        run: git push --follow-tags

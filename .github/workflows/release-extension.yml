@@ -1,0 +1,91 @@
+name: Release VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Python dependencies (for release notes generator)
+        run: pip install anthropic
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npx --yes @vscode/vsce package --no-yarn --no-git-tag-version "$VERSION" -o "leetknight-${VERSION}.vsix"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="$PREV_TAG..HEAD"
+          fi
+
+          INSTALL_BLOCK=$(cat <<EOF
+          ## Install
+          \`\`\`bash
+          code --install-extension leetknight-${VERSION}.vsix
+          \`\`\`
+          EOF
+          )
+
+          # Try AI-curated notes; fall back to a plain commit list on any failure
+          # (missing secret, API outage, network blip, etc.) so a release never breaks.
+          if AI_NOTES=$(python3 .github/scripts/release_notes.py "$PREV_TAG" "$VERSION" 2>release_notes.err); then
+            echo "Using AI-generated release notes."
+            NOTES=$(printf '%s\n\n%s\n' "$INSTALL_BLOCK" "$AI_NOTES")
+          else
+            echo "AI release notes unavailable, falling back to commit list. Reason:"
+            cat release_notes.err
+            CHANGELOG=$(git log $RANGE --pretty=format:"- %s" --no-merges)
+            NOTES=$(cat <<EOF
+          ${INSTALL_BLOCK}
+
+          ## Changes
+          ${CHANGELOG}
+          EOF
+          )
+          fi
+
+          gh release create "$GITHUB_REF_NAME" \
+            "leetknight-${VERSION}.vsix" \
+            --title "LeetKnight ${VERSION}" \
+            --notes "$NOTES"
+
+      - name: Publish to VS Code Marketplace
+        run: npx --yes @vscode/vsce publish --packagePath "leetknight-${GITHUB_REF_NAME#v}.vsix" --no-yarn
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
