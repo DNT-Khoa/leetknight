@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add `playground/Playground.java` scratch pad and a `LeetKnight: Run Playground` command (▶ in the editor toolbar) that compiles and runs it locally via `javac`/`java`. Scaffolded during `Initialize Workspace`; `Run Playground` self-heals a missing folder so existing workspaces don't need to re-init.
+
 ## 0.1.0
 
 Initial release.
