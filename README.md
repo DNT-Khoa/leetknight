@@ -15,6 +15,7 @@ LeetKnight is a VS Code extension for interview prep on LeetCode in Java. It:
 - **Runs & submits from the editor** — ▶ runs your solution against LeetCode's own example test cases via the "Run Code" endpoint; ☁️ submits it for real. Both use LeetCode's `java` runtime — nothing is compiled locally.
 - **Grades your recall** — after every Accepted submission, a modal asks you to rate the attempt (**Hard / Medium / Easy**). Ratings drive the practice panel, grouped 🔴 Hard → 🟡 Medium → 🟢 Easy so the ones you found hardest sit at the top. Within a group the oldest attempts come first so you don't see the same problem every session.
 - **Re-solves on demand** — click any problem in the panel and it opens `Solution.java` and resets it back to the starter (no confirmation prompt) so you can re-solve it from scratch. The random-pick button picks one at random (interview-mode: no idea what's coming).
+- **Scratch pad** — `playground/Playground.java` is a throwaway `main` you can compile and run locally with ▶ from the editor toolbar. Handy for trying a helper, a data-structure API, or a small algorithm before wiring it into a problem's `Solution.java`. On a workspace initialized before the playground existed, the first **Run Playground** creates the folder on the fly — no re-init needed.
 
 ## Install
 
@@ -23,9 +24,11 @@ LeetKnight is a VS Code extension for interview prep on LeetCode in Java. It:
 - **Python 3.10+** on your PATH (`python3 --version` must work). The bundled helper scripts use it to talk to LeetCode's API.
 - `pip install requests beautifulsoup4` — used by the bundled scripts.
 - **VS Code 1.85+**.
-- No local JDK required. LeetCode compiles and runs your submission on their servers.
+- No local JDK required for Run/Submit — LeetCode compiles and runs your submission on their servers. A JDK (`javac` + `java` on your PATH) is only needed if you want to use the local `playground/Playground.java` scratch pad.
 
 Then in a new folder run **`LeetKnight: Initialize Workspace`** from the Command Palette to seed `.leetknight/reviews.json`.
+
+Safe to re-run on an existing workspace — init is idempotent. It creates only what's missing (`.leetknight/reviews.json`, `playground/Playground.java`, workspace `README.md`) and never overwrites your ratings, problem folders, or playground code.
 
 ## LeetCode setup
 
@@ -58,6 +61,7 @@ Cookies typically last ~2 weeks. When they expire you'll see an `[auth]` message
 | `LeetKnight: Reset Problem` (↻) | Reset `Solution.java` to the starter |
 | `LeetKnight: Pick Random Practice Problem` | Open a random tracked problem for re-solving |
 | `LeetKnight: Set LeetCode Cookies` | Paste `LEETCODE_SESSION` + `csrftoken` |
+| `LeetKnight: Run Playground` (▶) | Compile and run `playground/Playground.java` locally |
 
 ## How it works
 

@@ -75,6 +75,11 @@
       {
         "command": "leetknight.setLeetcodeCookies",
         "title": "LeetKnight: Set LeetCode Cookies"
+      },
+      {
+        "command": "leetknight.runPlayground",
+        "title": "LeetKnight: Run Playground",
+        "icon": "$(play-circle)"
       }
     ],
     "viewsContainers": {
@@ -107,6 +112,10 @@
         {
           "command": "leetknight.resetProblem",
           "when": "leetknight.activeIsProblem"
+        },
+        {
+          "command": "leetknight.runPlayground",
+          "when": "leetknight.activeIsPlayground"
         }
       ],
       "editor/title": [
@@ -124,6 +133,11 @@
           "command": "leetknight.resetProblem",
           "when": "leetknight.activeIsProblem",
           "group": "navigation@3"
+        },
+        {
+          "command": "leetknight.runPlayground",
+          "when": "leetknight.activeIsPlayground",
+          "group": "navigation@1"
         }
       ],
       "view/title": [

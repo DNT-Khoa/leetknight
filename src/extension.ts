@@ -23,6 +23,15 @@ const LEETCODE_CSRF_KEY = "leetknight.leetcodeCsrf";
 
 const SOLUTION_FILENAME = "Solution.java";
 const META_FILENAME = ".leetknight.json";
+const PLAYGROUND_DIR = "playground";
+const PLAYGROUND_FILENAME = "Playground.java";
+
+const PLAYGROUND_TEMPLATE = `public class Playground {
+    public static void main(String[] args) {
+        System.out.println("Hello from LeetKnight playground.");
+    }
+}
+`;
 
 export function activate(context: vscode.ExtensionContext) {
   extensionRoot = context.extensionPath;
@@ -47,6 +56,9 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("leetknight.setLeetcodeCookies", () =>
       setLeetcodeCookies(),
+    ),
+    vscode.commands.registerCommand("leetknight.runPlayground", () =>
+      runPlayground(),
     ),
     vscode.commands.registerCommand(
       "leetknight._openAndReset",
@@ -132,12 +144,19 @@ function updateActiveContext(): void {
   const editor = vscode.window.activeTextEditor;
   const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   let isProblem = false;
+  let isPlayground = false;
   if (editor && root) {
     const filePath = editor.document.uri.fsPath;
-    if (path.basename(filePath) === SOLUTION_FILENAME) {
+    const filename = path.basename(filePath);
+    if (filename === SOLUTION_FILENAME) {
       const meta = path.join(path.dirname(filePath), META_FILENAME);
       if (fs.existsSync(meta)) {
         isProblem = true;
+      }
+    } else if (filename === PLAYGROUND_FILENAME) {
+      const rel = path.relative(root, filePath).split(path.sep);
+      if (rel.length === 2 && rel[0] === PLAYGROUND_DIR) {
+        isPlayground = true;
       }
     }
   }
@@ -145,6 +164,11 @@ function updateActiveContext(): void {
     "setContext",
     "leetknight.activeIsProblem",
     isProblem,
+  );
+  vscode.commands.executeCommand(
+    "setContext",
+    "leetknight.activeIsPlayground",
+    isPlayground,
   );
 }
 
@@ -206,6 +230,8 @@ async function initWorkspace() {
     saveReviews(root, { version: 1, problems: {} });
   }
 
+  ensurePlayground(root);
+
   const readme = path.join(root, "README.md");
   if (!fs.existsSync(readme)) {
     fs.writeFileSync(
@@ -228,6 +254,9 @@ This folder is a LeetKnight workspace. Ratings and attempt history live in
 5. After a Submit-Accepted, LeetKnight pops a modal asking you to rate
    Hard / Medium / Easy. The Practice panel groups your problems by that
    rating so the ones you found hardest bubble to the top.
+6. Use \`playground/Playground.java\` as a Java scratch pad. Open it and
+   click the ▶ button in the editor toolbar (or run **LeetKnight: Run
+   Playground**) to compile and run it.
 `,
     );
   }
@@ -319,6 +348,22 @@ async function resetProblem() {
 
 async function runReset(slug: string): Promise<void> {
   await runInTerminal(`${bundledScript("reset_problem.py")} ${shellQuote(slug)}`);
+}
+
+function ensurePlayground(root: string): void {
+  const dir = path.join(root, PLAYGROUND_DIR);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, PLAYGROUND_FILENAME);
+  if (!fs.existsSync(file)) fs.writeFileSync(file, PLAYGROUND_TEMPLATE);
+}
+
+async function runPlayground(): Promise<void> {
+  const root = requireInit();
+  if (!root) return;
+  ensurePlayground(root);
+  await runInTerminal(
+    `( cd ${shellQuote(PLAYGROUND_DIR)} && javac *.java && java Playground )`,
+  );
 }
 
 async function pickRandom(practice: PracticeProvider) {
