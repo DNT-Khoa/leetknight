@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 
@@ -99,21 +100,168 @@ def run_batch(session, slug: str, question_id: str, code: str, data_input: str) 
     raise auth.AuthError(f"timed out waiting for judge after {POLL_MAX_WAIT}s", reason="other")
 
 
-def split_cases(example_testcases: str, code_answers: list) -> list[str]:
+def split_cases(example_testcases: str, code_answers: list, n_params: int = 0) -> list[str]:
     """Split LeetCode's raw exampleTestcases into per-case display strings.
 
     LeetCode returns example inputs as one big newline-separated block, one
-    parameter per line, with N params per case. We know how many cases there
-    are because the judge returns exactly len(cases) `code_answer` entries.
+    parameter per line, with N params per case. When the method's parameter
+    count is known, that decides the split. Otherwise fall back to the number
+    of answers the judge returned, which is less reliable: the judge's answer
+    lists can carry a trailing empty entry, or stop early on a runtime error.
     """
     if not example_testcases:
         return []
     lines = example_testcases.split("\n")
+    if n_params > 0 and len(lines) % n_params == 0:
+        return ["\n".join(lines[i:i + n_params]) for i in range(0, len(lines), n_params)]
     n_cases = max(1, len(code_answers))
     if n_cases == 0 or len(lines) % n_cases != 0:
         return [example_testcases]
     per_case = len(lines) // n_cases
     return ["\n".join(lines[i * per_case:(i + 1) * per_case]) for i in range(n_cases)]
+
+
+def split_top_level(s: str, sep: str = ",") -> list[str]:
+    """Split on `sep`, ignoring separators nested inside <...> generics."""
+    parts, depth, cur = [], 0, ""
+    for ch in s:
+        if ch == "<":
+            depth += 1
+        elif ch == ">":
+            depth -= 1
+        if ch == sep and depth == 0:
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        parts.append(cur)
+    return parts
+
+
+def param_names(initial_code: str) -> list[str]:
+    """Parameter names of the first public method in the Java stub.
+
+    e.g. `public int[] twoSum(int[] nums, int target)` -> ["nums", "target"].
+    Returns [] if no method is found, or for design problems (no `class
+    Solution`), whose input is an op list + arg list rather than one line per
+    method parameter.
+    """
+    if "class Solution" not in (initial_code or ""):
+        return []
+    m = re.search(r"public\s+[\w<>\[\],\s]+?\s+\w+\s*\(([^)]*)\)", initial_code or "")
+    if not m:
+        return []
+    names = []
+    for p in split_top_level(m.group(1)):
+        tokens = p.strip().split()
+        if tokens:
+            names.append(tokens[-1])
+    return names
+
+
+def format_input(case_input: str, names: list[str]) -> list[str]:
+    """One line per argument, labelled with its parameter name when the
+    number of lines matches the method signature."""
+    lines = case_input.split("\n")
+    if len(names) != len(lines):
+        return lines
+    width = max(len(n) for n in names)
+    return [f"{n.ljust(width)} = {v}" for n, v in zip(names, lines)]
+
+
+def render(result: dict, data_input: str, names: list[str], elapsed: float) -> tuple[list[str], int]:
+    """Turn a judge result into console lines and an exit code."""
+    status_msg = result.get("status_msg", "?")
+    compile_err = (result.get("compile_error") or "").strip()
+    runtime_err = (result.get("runtime_error") or "").strip()
+    your = result.get("code_answer") or []
+    expect = result.get("expected_code_answer") or []
+    stdout_per_case = result.get("code_output") or []
+    compare_result = result.get("compare_result") or ""
+    timing = f"({elapsed:.2f}s)"
+
+    if compile_err:
+        return [f"❌ Compile error  {timing}", "", compile_err], 1
+
+    # The judge's answer lists can end with an empty entry that isn't a case.
+    while expect and not expect[-1].strip():
+        expect = expect[:-1]
+    while your and len(your) > len(expect) and not your[-1].strip():
+        your = your[:-1]
+
+    inputs_per_case = split_cases(data_input, expect or your or [""], len(names))
+    if names and len(inputs_per_case) > 1:
+        n_cases = len(inputs_per_case)
+    else:
+        n_cases = max(len(your), len(expect))
+
+    # With a runtime error the judge stops at the crashing case, so the first
+    # case without an answer is the one that crashed and later ones never ran.
+    crashed = None
+    if runtime_err:
+        crashed = next((i for i in range(n_cases) if i >= len(your) or not your[i].strip()), None)
+
+    rows = []  # (index, status, your, expected); status in pass/fail/crash/skip
+    for i in range(n_cases):
+        y = your[i].strip() if i < len(your) else ""
+        e = expect[i].strip() if i < len(expect) else ""
+        if crashed is not None and i == crashed:
+            rows.append((i, "crash", y, e))
+        elif crashed is not None and i > crashed:
+            rows.append((i, "skip", y, e))
+        elif not y and not e:
+            continue
+        else:
+            bit = compare_result[i] if i < len(compare_result) else None
+            ok, _ = grade_case(y, e, bit)
+            rows.append((i, "pass" if ok else "fail", y, e))
+
+    total = len(rows)
+    passed = sum(1 for r in rows if r[1] == "pass")
+    failed = total - passed
+
+    if crashed is not None:
+        verdict = f"❌ Runtime error in test {crashed + 1}  {timing}"
+    elif runtime_err:
+        verdict = f"❌ Runtime error  {timing}"
+    elif status_msg not in ("Accepted", "Runtime Error", "?"):
+        # e.g. Time Limit Exceeded: the judge gave up, so if it produced no
+        # answers at all, per-test "(no output)" rows would just be noise.
+        if not any(y for _, _, y, _ in rows):
+            return [f"❌ {status_msg}  {timing}"], 1
+        verdict = f"❌ {status_msg}  {timing}"
+    elif failed == 0 and total > 0:
+        verdict = f"✅ All {total} {'test' if total == 1 else 'tests'} passed  {timing}"
+    else:
+        verdict = f"❌ {failed} of {total} {'test' if total == 1 else 'tests'} failed  {timing}"
+
+    out = [verdict, ""]
+    if runtime_err and crashed is None:
+        out += ["Runtime error:", runtime_err, ""]
+
+    icons = {"pass": "✅", "fail": "❌", "crash": "💥", "skip": "⏭️ "}
+    labels = {"crash": "  runtime error", "skip": "  not run"}
+    for i, status, y, e in rows:
+        out.append(f"{icons[status]} Test {i + 1}{labels.get(status, '')}")
+        if status in ("pass", "skip"):
+            continue
+        case_input = inputs_per_case[i] if i < len(inputs_per_case) else ""
+        for j, line in enumerate(format_input(case_input, names)):
+            out.append(f"     {'input' if j == 0 else '':<9} {line}")
+        if status == "crash":
+            for j, line in enumerate(runtime_err.splitlines()):
+                out.append(f"     {'error' if j == 0 else '':<9} {line}")
+        else:
+            out.append(f"     {'your':<9} {y or '(no output)'}")
+            out.append(f"     {'expected':<9} {e}")
+        if i < len(stdout_per_case) and stdout_per_case[i]:
+            stdout_lines = str(stdout_per_case[i]).rstrip("\n").splitlines()
+            for j, line in enumerate(stdout_lines):
+                out.append(f"     {'stdout' if j == 0 else '':<9} {line}")
+
+    code = 0 if failed == 0 and total > 0 and not runtime_err else 1
+    return out, code
 
 
 def main() -> int:
@@ -162,54 +310,10 @@ def main() -> int:
         auth.fail(e)
     elapsed = time.time() - t0
 
-    status_msg = result.get("status_msg", "?")
-    compile_err = (result.get("compile_error") or "").strip()
-    runtime_err = (result.get("runtime_error") or "").strip()
-    your = result.get("code_answer") or []
-    expect = result.get("expected_code_answer") or []
-    stdout_per_case = result.get("code_output") or []
-    compare_result = result.get("compare_result") or ""
-
+    lines, exit_code = render(result, data_input, param_names(meta.get("initialCode") or ""), elapsed)
     print()
-    print(f"Judge status: {status_msg}  ({elapsed:.2f}s)")
-
-    if compile_err:
-        print()
-        print("Compile error:")
-        print(compile_err)
-        return 1
-
-    if runtime_err:
-        print()
-        print("Runtime error:")
-        print(runtime_err)
-
-    inputs_per_case = split_cases(data_input, your or expect or [""])
-    pass_count = 0
-    fail_count = 0
-    for i in range(max(len(your), len(expect))):
-        y = your[i].strip() if i < len(your) else ""
-        e = expect[i].strip() if i < len(expect) else ""
-        if not y and not e:
-            continue
-        bit = compare_result[i] if i < len(compare_result) else None
-        ok, note = grade_case(y, e, bit)
-        mark = "PASS" if ok else "FAIL"
-        if ok:
-            pass_count += 1
-        else:
-            fail_count += 1
-        print(f"\nTest {i + 1}: {mark}{note}")
-        if i < len(inputs_per_case):
-            print(f"  input:    {inputs_per_case[i]!r}")
-        print(f"  your:     {y}")
-        print(f"  expected: {e}")
-        if i < len(stdout_per_case) and stdout_per_case[i]:
-            print(f"  stdout:   {stdout_per_case[i]}")
-
-    print()
-    print(f"Summary: {pass_count} passed, {fail_count} failed")
-    return 0 if fail_count == 0 and not runtime_err else 1
+    print("\n".join(lines))
+    return exit_code
 
 
 if __name__ == "__main__":
