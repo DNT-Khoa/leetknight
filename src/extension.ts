@@ -487,6 +487,7 @@ async function handlePending(root: string, practice: PracticeProvider) {
 }
 
 interface LeetcodeSearchResult {
+  id: string;
   title: string;
   titleSlug: string;
   difficulty: string;
@@ -533,6 +534,7 @@ async function fetchAllLeetcodeProblems(): Promise<LeetcodeSearchResult[]> {
     const stat = entry?.stat || {};
     const total = stat.total_submitted || 0;
     return {
+      id: String(stat.frontend_question_id ?? ""),
       title: stat.question__title || "",
       titleSlug: stat.question__title_slug || "",
       difficulty: levels[entry?.difficulty?.level || 0] || "?",
@@ -549,8 +551,22 @@ async function fetchLeetcodeQuestions(
   const all = await fetchAllLeetcodeProblems();
   const needle = searchKeywords.toLowerCase().trim();
   if (!needle) return all.slice(0, 30);
+  // A bare number (optionally "#1" or "1.") looks up the problem by its
+  // LeetCode number; the exact match comes first, followed by any titles that
+  // happen to contain the digits (e.g. "3" also finds "3Sum").
+  const num = needle.match(/^#?(\d+)\.?$/)?.[1];
+  if (num) {
+    const id = String(Number(num));
+    const exact = all.filter((q) => q.id === id);
+    const byTitle = all.filter(
+      (q) => q.id !== id && q.title.toLowerCase().includes(num),
+    );
+    return [...exact, ...byTitle].slice(0, 30);
+  }
+  // Otherwise match against "<number>. <title>" so pasted headings like
+  // "1. Two Sum" work as well as plain keywords.
   return all
-    .filter((q) => q.title.toLowerCase().includes(needle))
+    .filter((q) => `${q.id}. ${q.title}`.toLowerCase().includes(needle))
     .slice(0, 30);
 }
 
@@ -559,8 +575,8 @@ async function searchLeetcode() {
   if (!root) return;
 
   const query = await vscode.window.showInputBox({
-    prompt: "Search LeetCode problems by title or keyword",
-    placeHolder: "two sum",
+    prompt: "Search LeetCode problems by number, title or keyword",
+    placeHolder: "two sum  or  1",
   });
   if (!query) return;
 
@@ -600,7 +616,7 @@ async function searchLeetcode() {
   }
 
   const picks = questions.map((q) => ({
-    label: `${q.title}${q.paidOnly ? " 🔒" : ""}`,
+    label: `${q.id ? `${q.id}. ` : ""}${q.title}${q.paidOnly ? " 🔒" : ""}`,
     description: `${q.difficulty} · ${q.acRate.toFixed(1)}% AC`,
     detail: `https://leetcode.com/problems/${q.titleSlug}/`,
     question: q,

@@ -54,7 +54,7 @@ Cookies typically last ~2 weeks. When they expire you'll see an `[auth]` message
 | Command | What it does |
 |---|---|
 | `LeetKnight: Initialize Workspace` | Create `.leetknight/reviews.json` in the current folder |
-| `LeetKnight: Search LeetCode` | Fuzzy-search the catalog and scaffold the pick |
+| `LeetKnight: Search LeetCode` | Search the catalog by number or title and scaffold the pick |
 | `LeetKnight: New Problem from URL` | Scaffold a specific LeetCode URL |
 | `LeetKnight: Run Tests` (▶) | Run example cases via `interpret_solution` |
 | `LeetKnight: Submit` (☁️) | Real submission; opens Hard/Medium/Easy modal on Accepted |
