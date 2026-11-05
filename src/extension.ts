@@ -496,16 +496,34 @@ interface LeetcodeSearchResult {
 
 let cachedAllProblems: LeetcodeSearchResult[] | undefined;
 
+class MissingCookiesError extends Error {}
+
 async function fetchAllLeetcodeProblems(): Promise<LeetcodeSearchResult[]> {
   if (cachedAllProblems) return cachedAllProblems;
-  // /api/problems/all/ is the REST catalog endpoint — works anonymously and
-  // returns ~4000 problems in one ~1 MB JSON blob. The GraphQL
-  // problemsetQuestionList field was deprecated; its V2 successor walls
-  // searchKeyword behind auth, so client-side filter over this REST list
-  // is the simplest no-auth path.
+  // /api/problems/all/ is the REST catalog endpoint — ~4000 problems in one
+  // ~1 MB JSON blob, filtered client-side. LeetCode now rejects anonymous
+  // requests to it (HTTP 403), so send the user's stored cookies with the
+  // same headers the Python scripts use (see scripts/leetcode_auth.py).
+  const env = await leetcodeEnv();
+  const session = env["LEETCODE_SESSION"];
+  const csrf = env["LEETCODE_CSRF"];
+  if (!session || !csrf) {
+    throw new MissingCookiesError();
+  }
   const r = await fetch("https://leetcode.com/api/problems/all/", {
-    headers: { "User-Agent": "LeetKnight/1.0" },
+    headers: {
+      "User-Agent": "LeetKnight/1.0",
+      Referer: "https://leetcode.com/problemset/",
+      Accept: "application/json",
+      "x-csrftoken": csrf,
+      Cookie: `LEETCODE_SESSION=${session}; csrftoken=${csrf}`,
+    },
   });
+  if (r.status === 401 || r.status === 403) {
+    throw new Error(
+      `LeetCode rejected the request (HTTP ${r.status}). Your cookies may be expired — run 'LeetKnight: Set LeetCode Cookies' and paste fresh LEETCODE_SESSION and csrftoken values.`,
+    );
+  }
   if (!r.ok) {
     throw new Error(`LeetCode catalog failed: HTTP ${r.status}`);
   }
@@ -546,6 +564,8 @@ async function searchLeetcode() {
   });
   if (!query) return;
 
+  let missingCookies = false;
+  let failed = false;
   const questions = await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -555,11 +575,22 @@ async function searchLeetcode() {
       try {
         return await fetchLeetcodeQuestions(query);
       } catch (e: any) {
-        vscode.window.showErrorMessage(`LeetKnight: ${e.message}`);
+        if (e instanceof MissingCookiesError) {
+          missingCookies = true;
+        } else {
+          failed = true;
+          vscode.window.showErrorMessage(`LeetKnight: ${e.message}`);
+        }
         return [];
       }
     },
   );
+
+  if (missingCookies) {
+    await promptForCookies();
+    return;
+  }
+  if (failed) return;
 
   if (questions.length === 0) {
     vscode.window.showInformationMessage(
